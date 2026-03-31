@@ -105,3 +105,65 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Audio extractor API running on port ${PORT}`);
 });
+app.post("/mux-video", async (req, res) => {
+  const { video_url, audio_url } = req.body || {};
+
+  if (!video_url || !audio_url) {
+    return res.status(400).json({
+      ok: false,
+      error: "video_url and audio_url are required"
+    });
+  }
+
+  const tempDir = os.tmpdir();
+  const inputVideoPath = path.join(tempDir, randomName(".mp4"));
+  const inputAudioPath = path.join(tempDir, randomName(".mp3"));
+  const outputVideoPath = path.join(tempDir, randomName(".mp4"));
+
+  try {
+    await downloadFile(video_url, inputVideoPath);
+    await downloadFile(audio_url, inputAudioPath);
+
+    await new Promise((resolve, reject) => {
+      ffmpeg()
+        .input(inputVideoPath)
+        .input(inputAudioPath)
+        .outputOptions([
+          "-map 0:v:0",
+          "-map 1:a:0",
+          "-c:v copy",
+          "-c:a aac",
+          "-shortest"
+        ])
+        .on("end", resolve)
+        .on("error", reject)
+        .save(outputVideoPath);
+    });
+
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Content-Disposition", 'attachment; filename="final.mp4"');
+
+    const readStream = fs.createReadStream(outputVideoPath);
+    readStream.pipe(res);
+
+    readStream.on("close", () => {
+      try {
+        if (fs.existsSync(inputVideoPath)) fs.unlinkSync(inputVideoPath);
+        if (fs.existsSync(inputAudioPath)) fs.unlinkSync(inputAudioPath);
+        if (fs.existsSync(outputVideoPath)) fs.unlinkSync(outputVideoPath);
+      } catch (_) {}
+    });
+  } catch (error) {
+    try {
+      if (fs.existsSync(inputVideoPath)) fs.unlinkSync(inputVideoPath);
+      if (fs.existsSync(inputAudioPath)) fs.unlinkSync(inputAudioPath);
+      if (fs.existsSync(outputVideoPath)) fs.unlinkSync(outputVideoPath);
+    } catch (_) {}
+
+    return res.status(500).json({
+      ok: false,
+      error: "Failed to mux video and audio",
+      details: error.message
+    });
+  }
+});
