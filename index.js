@@ -101,10 +101,6 @@ app.post("/extract-audio", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Audio extractor API running on port ${PORT}`);
-});
 app.post("/mux-video", async (req, res) => {
   const { video_url, audio_url } = req.body || {};
 
@@ -166,4 +162,8 @@ app.post("/mux-video", async (req, res) => {
       details: error.message
     });
   }
+});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Audio extractor API running on port ${PORT}`);
 });
