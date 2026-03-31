@@ -1,0 +1,16 @@
+{
+  "name": "audio-extractor-api",
+  "version": "1.0.0",
+  "description": "Extract MP3 audio from a remote video URL using ffmpeg-static",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "express": "^4.21.2",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3"
+  }
+}
